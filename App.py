@@ -4,7 +4,6 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
-import io
 
 # Page Configuration
 st.set_page_config(
@@ -14,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Premium Dark Theme with WHITE text
+# Custom CSS for Premium Dark Theme with proper contrast
 st.markdown("""
 <style>
     /* Main background */
@@ -22,13 +21,18 @@ st.markdown("""
         background-color: #0E1117;
     }
     
-    /* Sidebar styling */
+    /* Sidebar styling - DARK background for white text visibility */
     [data-testid="stSidebar"] {
-        background-color: #0a0e14;
+        background-color: #0a0e14 !important;
         border-right: 1px solid #1a1f2e;
     }
     
-    /* Metric cards - WHITE text */
+    /* Sidebar content area */
+    [data-testid="stSidebar"] > div {
+        background-color: #0a0e14 !important;
+    }
+    
+    /* Metric cards */
     [data-testid="stMetricValue"] {
         font-size: 2rem;
         font-weight: 300;
@@ -43,26 +47,31 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* Headers - WHITE text */
+    /* Headers - WHITE text with proper contrast */
     h1, h2, h3, h4, h5, h6 {
         font-weight: 400;
         color: #ffffff !important;
     }
     
-    /* Regular text - WHITE */
-    p, div, span, label {
+    /* Main content text - WHITE */
+    .main .stMarkdown {
         color: #ffffff !important;
     }
     
-    /* Captions - WHITE */
+    /* Paragraphs and regular text */
+    p, .stMarkdown, div[data-testid="stMarkdownContainer"] {
+        color: #ffffff !important;
+    }
+    
+    /* Captions */
     .stCaption {
-        color: #ffffff !important;
+        color: #e0e0e0 !important;
     }
     
-    /* Info boxes - WHITE text */
+    /* Info boxes - WHITE text on dark background */
     .stAlert {
-        background-color: #0a0e14;
-        border: 1px solid #1a1f2e;
+        background-color: #1a1f2e !important;
+        border: 1px solid #2d3748 !important;
         border-radius: 4px;
         color: #ffffff !important;
     }
@@ -71,70 +80,100 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* Sliders - WHITE labels */
-    .stSlider label {
+    /* Selectbox labels - make them visible */
+    .stSelectbox > label {
+        color: #00d4ff !important;
+        font-weight: 600;
+    }
+    
+    /* Selectbox div */
+    .stSelectbox div[data-baseweb="select"] {
+        background-color: #1a1f2e !important;
+    }
+    
+    /* Checkbox labels */
+    .stCheckbox > label {
         color: #ffffff !important;
     }
     
-    /* Selectbox - WHITE text */
-    .stSelectbox label {
+    /* File uploader labels */
+    [data-testid="stFileUploader"] > label {
         color: #ffffff !important;
     }
     
-    /* Checkbox - WHITE text */
-    .stCheckbox label {
-        color: #ffffff !important;
-    }
-    
-    /* File uploader - WHITE text */
-    [data-testid="stFileUploader"] label {
-        color: #ffffff !important;
-    }
-    
-    /* Success messages - WHITE */
+    /* Success messages */
     .stSuccess {
-        color: #ffffff !important;
+        color: #00ff88 !important;
+        font-weight: 600;
     }
     
     .stWarning {
-        color: #ffffff !important;
+        color: #ffcc00 !important;
+        font-weight: 600;
     }
     
     .stError {
+        color: #ff4444 !important;
+        font-weight: 600;
+    }
+    
+    /* Dataframe */
+    .dataframe {
         color: #ffffff !important;
     }
     
-    /* Dataframe - WHITE text */
-    .dataframe {
-        color: #ffffff !important;
+    /* Make all selectbox options readable */
+    .stSelectbox option {
+        background-color: #1a1f2e;
+        color: #ffffff;
     }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ============ DATA LOADING FUNCTIONS (NO CACHING TO FIX ERROR) ============
+# ============ DATA LOADING FUNCTIONS (NO CACHING) ============
 
 def load_crypto_data(file_path):
-    """Load and process cryptocurrency dataset"""
+    """Load and process cryptocurrency dataset with better error handling"""
     try:
-        # Read CSV file
-        df = pd.read_csv(file_path)
+        # Read CSV file with explicit parameters
+        df = pd.read_csv(file_path, on_bad_lines='skip', engine='python')
+        
+        # Check if required columns exist
+        required_columns = ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        
+        if missing_columns:
+            st.error(f"Missing columns: {missing_columns}")
+            st.error(f"Available columns: {list(df.columns)}")
+            return None
         
         # Convert Unix timestamp to datetime
-        df['Date'] = pd.to_datetime(df['Timestamp'], unit='s')
+        try:
+            df['Date'] = pd.to_datetime(df['Timestamp'], unit='s', errors='coerce')
+            # Drop rows with invalid dates
+            df = df.dropna(subset=['Date'])
+        except Exception as e:
+            st.error(f"Error converting timestamp: {e}")
+            return None
         
         # Reorder columns
         df = df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
         
-        # Remove rows with zero or negative volume (optional cleaning)
+        # Remove rows with zero or negative volume
         df = df[df['Volume'] > 0]
         
         # Sort by date
         df = df.sort_values('Date').reset_index(drop=True)
         
         return df
+    except FileNotFoundError:
+        st.error(f"File not found: {file_path}")
+        st.error("Please ensure the CSV file is in the same directory as the app.")
+        return None
     except Exception as e:
-        st.error(f"Error loading data: {e}")
+        st.error(f"Error loading data: {str(e)}")
+        st.error("Please check the file format and try again.")
         return None
 
 
@@ -546,8 +585,8 @@ def main():
         st.markdown("##### Customize data view")
         st.markdown("")
         
-        # Data Range Selection
-        st.markdown("**TIME RANGE**")
+        # Data Range Selection - Using markdown with color for visibility
+        st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**TIME RANGE**</p>', unsafe_allow_html=True)
         days_range = st.selectbox(
             "Select time range",
             [7, 15, 30, 60, 90],
@@ -559,7 +598,7 @@ def main():
         st.markdown("")
         
         # Data Granularity
-        st.markdown("**DATA GRANULARITY**")
+        st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**DATA GRANULARITY**</p>', unsafe_allow_html=True)
         granularity = st.selectbox(
             "Select data granularity",
             ["Daily", "Hourly", "Raw (Minute-level)"],
@@ -569,7 +608,7 @@ def main():
         st.markdown("")
         
         # File Upload (optional - use default dataset)
-        st.markdown("**DATA SOURCE**")
+        st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**DATA SOURCE**</p>', unsafe_allow_html=True)
         use_default = st.checkbox("Use default dataset", value=True)
         
         if not use_default:
@@ -610,7 +649,14 @@ def main():
         df = load_crypto_data(data_file)
     
     if df is None or len(df) == 0:
-        st.error("Failed to load data. Please check the file format.")
+        st.error("Failed to load data. Please check the file format and ensure the file is in the same directory.")
+        st.markdown("""
+        **Troubleshooting Tips:**
+        1. Ensure the CSV file is in the same folder as this Python script
+        2. Check that the file name is exactly: `Crypto_data.crdownload`
+        3. Verify the file has these columns: Timestamp, Open, High, Low, Close, Volume
+        4. Try renaming the file to `Crypto_data.csv` if needed
+        """)
         st.stop()
     
     # Show data loading success
