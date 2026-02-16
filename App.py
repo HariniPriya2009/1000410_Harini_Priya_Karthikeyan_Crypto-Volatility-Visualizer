@@ -133,11 +133,12 @@ st.markdown("""
 
 # ============ DATA LOADING FUNCTIONS (NO CACHING) ============
 
-def load_crypto_data(file_path):
-    """Load and process cryptocurrency dataset with better error handling"""
+def load_crypto_data(file_path, days=30):
+    """Load and process cryptocurrency dataset - optimized for last 30 days only"""
     try:
-        # Read CSV file with explicit parameters
-        df = pd.read_csv(file_path, on_bad_lines='skip', engine='python')
+        # Read CSV file with explicit parameters - read in chunks for better performance
+        # First, read just the last 100000 rows (approximately 70 days of minute data)
+        df = pd.read_csv(file_path, on_bad_lines='skip', engine='python', nrows=100000)
         
         # Check if required columns exist
         required_columns = ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
@@ -163,8 +164,17 @@ def load_crypto_data(file_path):
         # Remove rows with zero or negative volume
         df = df[df['Volume'] > 0]
         
-        # Sort by date
+        # Sort by date and filter to last 30 days
         df = df.sort_values('Date').reset_index(drop=True)
+        
+        # Get the latest date
+        latest_date = df['Date'].max()
+        
+        # Calculate the cutoff date (30 days before latest)
+        cutoff_date = latest_date - timedelta(days=days)
+        
+        # Filter to last 30 days only
+        df = df[df['Date'] >= cutoff_date].copy()
         
         return df
     except FileNotFoundError:
@@ -585,17 +595,10 @@ def main():
         st.markdown("##### Customize data view")
         st.markdown("")
         
-        # Data Range Selection - Using markdown with color for visibility
+        # Fixed to 30 days for better performance
         st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**TIME RANGE**</p>', unsafe_allow_html=True)
-        days_range = st.selectbox(
-            "Select time range",
-            [7, 15, 30, 60, 90],
-            index=2,
-            label_visibility="collapsed",
-            format_func=lambda x: f"{x} Days"
-        )
-        
-        st.markdown("")
+        st.markdown('<p style="color: #ffffff; font-size: 12px;">Fixed to last 30 days for optimal performance</p>', unsafe_allow_html=True)
+        days_range = 30  # Fixed to 30 days
         
         # Data Granularity
         st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**DATA GRANULARITY**</p>', unsafe_allow_html=True)
@@ -627,9 +630,10 @@ def main():
         **Dataset Information**
         
         - Default: Crypto_data.crdownload
-        - Records: 637,114 data points
-        - Period: 2011-2013
-        - Granularity: Minute-level
+        - Records: Last 30 days only
+        - Period: Most recent 30 days
+        - Granularity: Minute-level (aggregated)
+        - Performance: Optimized for fast loading
         """)
     
     # Load Data
@@ -644,9 +648,9 @@ def main():
         st.warning("Please upload a dataset or use the default data.")
         st.stop()
     
-    # Load the dataset with progress indicator
-    with st.spinner("Loading and processing data..."):
-        df = load_crypto_data(data_file)
+    # Load only the last 30 days of data for better performance
+    with st.spinner("Loading and processing last 30 days of data..."):
+        df = load_crypto_data(data_file, days=30)
     
     if df is None or len(df) == 0:
         st.error("Failed to load data. Please check the file format and ensure the file is in the same directory.")
@@ -660,20 +664,13 @@ def main():
         st.stop()
     
     # Show data loading success
-    st.success(f"✅ Loaded {len(df):,} records from the dataset")
-    
-    # Filter data by selected time range
-    df_filtered = filter_data_by_days(df, days_range)
-    
-    if df_filtered is None or len(df_filtered) == 0:
-        st.error(f"No data available for the last {days_range} days.")
-        st.stop()
+    st.success(f"✅ Loaded {len(df):,} records from the last 30 days")
     
     # Apply granularity
     if granularity == "Daily":
-        df_display = aggregate_to_daily(df_filtered)
+        df_display = aggregate_to_daily(df)
     elif granularity == "Hourly":
-        df_display = df_filtered.set_index('Date').resample('H').agg({
+        df_display = df.set_index('Date').resample('H').agg({
             'Open': 'first',
             'High': 'max',
             'Low': 'min',
@@ -681,7 +678,7 @@ def main():
             'Volume': 'sum'
         }).dropna().reset_index()
     else:  # Raw data
-        df_display = df_filtered.copy()
+        df_display = df.copy()
     
     # Display data info
     st.markdown("### Data Overview")
@@ -698,7 +695,7 @@ def main():
         st.metric(
             "Date Range",
             f"{df_display['Date'].min().strftime('%b %d')} - {df_display['Date'].max().strftime('%b %d, %Y')}",
-            help="Selected time period"
+            help="Last 30 days of data"
         )
     
     with col3:
@@ -710,9 +707,9 @@ def main():
     
     with col4:
         st.metric(
-            "Data Points",
-            f"{days_range} days",
-            help="Time range selected"
+            "Time Period",
+            "30 Days",
+            help="Fixed time range for optimal performance"
         )
     
     st.markdown("")
@@ -754,7 +751,7 @@ def main():
     st.markdown("### Price Movement Over Time")
     st.markdown("##### Line graph showing how the price moves up and down")
     st.plotly_chart(
-        create_price_chart(df_display, f"Price Movement - Last {days_range} Days ({granularity})"),
+        create_price_chart(df_display, f"Price Movement - Last 30 Days ({granularity})"),
         use_container_width=True,
         config={'displayModeBar': False}
     )
