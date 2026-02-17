@@ -187,23 +187,6 @@ def load_crypto_data(file_path, days=30):
         return None
 
 
-def filter_data_by_days(df, days):
-    """Filter data to show only the last N days"""
-    if df is None or len(df) == 0:
-        return df
-    
-    # Get the latest date in the dataset
-    latest_date = df['Date'].max()
-    
-    # Calculate the cutoff date
-    cutoff_date = latest_date - timedelta(days=days)
-    
-    # Filter data
-    filtered_df = df[df['Date'] >= cutoff_date].copy()
-    
-    return filtered_df
-
-
 def aggregate_to_daily(df):
     """Aggregate minute-level data to daily level for better visualization"""
     if df is None or len(df) == 0:
@@ -496,29 +479,37 @@ def create_stable_volatile_comparison_chart(df):
 
 
 def create_volatility_comparison_chart(df):
-    """Create comparison chart showing stable vs volatile periods side by side"""
+    """Create comparison chart showing stable vs volatile periods side by side - FIXED VERSION"""
     if df is None or len(df) == 0:
         return go.Figure()
     
     # Identify periods
     df_with_periods = identify_stable_volatile_periods(df)
     
-    if df_with_periods is None:
+    if df_with_periods is None or len(df_with_periods) == 0:
         return go.Figure()
-    
-    # Create subplots
-    fig = make_subplots(
-        rows=2, cols=1,
-        subplot_titles=('Stable Period (Low Volatility)', 'Volatile Period (High Volatility)'),
-        vertical_spacing=0.15
-    )
     
     # Separate stable and volatile data
     stable_df = df_with_periods[df_with_periods['Period_Type'] == 'Stable'].copy()
     volatile_df = df_with_periods[df_with_periods['Period_Type'] == 'Volatile'].copy()
     
-    # Add stable period trace
-    if len(stable_df) > 0:
+    # Check if we have data for both periods
+    has_stable = len(stable_df) > 0
+    has_volatile = len(volatile_df) > 0
+    
+    if not has_stable and not has_volatile:
+        return go.Figure()
+    
+    # Create subplots with appropriate number of rows
+    if has_stable and has_volatile:
+        # Two subplots for stable and volatile
+        fig = make_subplots(
+            rows=2, cols=1,
+            subplot_titles=('Stable Period (Low Volatility)', 'Volatile Period (High Volatility)'),
+            vertical_spacing=0.15
+        )
+        
+        # Add stable period trace
         fig.add_trace(
             go.Scatter(
                 x=stable_df['Date'],
@@ -530,9 +521,8 @@ def create_volatility_comparison_chart(df):
             ),
             row=1, col=1
         )
-    
-    # Add volatile period trace
-    if len(volatile_df) > 0:
+        
+        # Add volatile period trace
         fig.add_trace(
             go.Scatter(
                 x=volatile_df['Date'],
@@ -544,27 +534,91 @@ def create_volatility_comparison_chart(df):
             ),
             row=2, col=1
         )
-    
-    # Update layout
-    fig.update_xaxes(
-        gridcolor='#1a1f2e',
-        showgrid=True,
-        title=dict(text='Date', font=dict(color='#ffffff'), size=12)
-    )
-    
-    fig.update_yaxes(
-        gridcolor='#1a1f2e',
-        showgrid=True,
-        tickprefix='$',
-        tickformat=',.0f',
-        title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
-    )
+        
+        # Update both x-axes and y-axes
+        fig.update_xaxes(
+            gridcolor='#1a1f2e',
+            showgrid=True,
+            title=dict(text='Date', font=dict(color='#ffffff'), size=12)
+        )
+        
+        fig.update_yaxes(
+            gridcolor='#1a1f2e',
+            showgrid=True,
+            tickprefix='$',
+            tickformat=',.0f',
+            title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
+        )
+        
+    elif has_stable:
+        # Only stable data - single subplot
+        fig = make_subplots(
+            rows=1, cols=1,
+            subplot_titles=('Stable Period (Low Volatility)',)
+        )
+        
+        fig.add_trace(
+            go.Scatter(
+                x=stable_df['Date'],
+                y=stable_df['Close'],
+                mode='lines',
+                name='Stable Price',
+                line=dict(color='#00ff88', width=2),
+                hovertemplate='<b>Date:</b> %{x|%Y-%m-%d}<br><b>Price:</b> $%{y:,.2f}<extra></extra>'
+            )
+        )
+        
+        fig.update_xaxes(
+            gridcolor='#1a1f2e',
+            showgrid=True,
+            title=dict(text='Date', font=dict(color='#ffffff'), size=12)
+        )
+        
+        fig.update_yaxes(
+            gridcolor='#1a1f2e',
+            showgrid=True,
+            tickprefix='$',
+            tickformat=',.0f',
+            title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
+        )
+        
+    else:
+        # Only volatile data - single subplot
+        fig = make_subplots(
+            rows=1, cols=1,
+            subplot_titles=('Volatile Period (High Volatility)',)
+        )
+        
+        fig.add_trace(
+            go.Scatter(
+                x=volatile_df['Date'],
+                y=volatile_df['Close'],
+                mode='lines',
+                name='Volatile Price',
+                line=dict(color='#ff6b9d', width=2),
+                hovertemplate='<b>Date:</b> %{x|%Y-%m-%d}<br><b>Price:</b> $%{y:,.2f}<extra></extra>'
+            )
+        )
+        
+        fig.update_xaxes(
+            gridcolor='#1a1f2e',
+            showgrid=True,
+            title=dict(text='Date', font=dict(color='#ffffff'), size=12)
+        )
+        
+        fig.update_yaxes(
+            gridcolor='#1a1f2e',
+            showgrid=True,
+            tickprefix='$',
+            tickformat=',.0f',
+            title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
+        )
     
     fig.update_layout(
         plot_bgcolor='#0a0e14',
         paper_bgcolor='#0a0e14',
         font=dict(color='#ffffff', size=12),
-        height=700,
+        height=700 if (has_stable and has_volatile) else 400,
         showlegend=True,
         legend=dict(font=dict(color='#ffffff'))
     )
@@ -599,6 +653,8 @@ def main():
         st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**TIME RANGE**</p>', unsafe_allow_html=True)
         st.markdown('<p style="color: #ffffff; font-size: 12px;">Fixed to last 30 days for optimal performance</p>', unsafe_allow_html=True)
         days_range = 30  # Fixed to 30 days
+        
+        st.markdown("")
         
         # Data Granularity
         st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**DATA GRANULARITY**</p>', unsafe_allow_html=True)
