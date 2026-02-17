@@ -571,11 +571,7 @@ def create_volatility_comparison_chart(df):
         fig.update_xaxes(
             gridcolor='#1a1f2e',
             showgrid=True,
-            title=dict(
-                text='Date',
-                font=dict(color='#ffffff', size=12)
-            )
-
+            title=dict(text='Date', font=dict(color='#ffffff'), size=12)
         )
         
         fig.update_yaxes(
@@ -607,11 +603,7 @@ def create_volatility_comparison_chart(df):
         fig.update_xaxes(
             gridcolor='#1a1f2e',
             showgrid=True,
-            title=dict(
-                text='Date',
-                font=dict(color='#ffffff', size=12)
-            )
-
+            title=dict(text='Date', font=dict(color='#ffffff'), size=12)
         )
         
         fig.update_yaxes(
