@@ -566,157 +566,103 @@ def create_stable_volatile_comparison_chart(df):
 
 
 def create_volatility_comparison_chart(df):
-    """Create comparison chart showing stable vs volatile periods side by side - FIXED VERSION"""
+    """Create comparison chart showing stable vs volatile periods side by side - FIXED"""
     if df is None or len(df) == 0:
         return go.Figure()
-    
-    # Identify periods
+
     df_with_periods = identify_stable_volatile_periods(df)
-    
+
     if df_with_periods is None or len(df_with_periods) == 0:
         return go.Figure()
-    
-    # Separate stable and volatile data
+
     stable_df = df_with_periods[df_with_periods['Period_Type'] == 'Stable'].copy()
     volatile_df = df_with_periods[df_with_periods['Period_Type'] == 'Volatile'].copy()
-    
-    # Check if we have data for both periods
+
     has_stable = len(stable_df) > 0
     has_volatile = len(volatile_df) > 0
-    
+
     if not has_stable and not has_volatile:
         return go.Figure()
-    
-    # Create subplots with appropriate number of rows
+
     if has_stable and has_volatile:
-        # Two subplots for stable and volatile
         fig = make_subplots(
             rows=2, cols=1,
-            subplot_titles=('Stable Period (Low Volatility)', 'Volatile Period (High Volatility)'),
+            subplot_titles=('Stable Period (Low Volatility)', 
+                            'Volatile Period (High Volatility)'),
             vertical_spacing=0.15
         )
-        
-        # Add stable period trace
+
         fig.add_trace(
             go.Scatter(
                 x=stable_df['Date'],
                 y=stable_df['Close'],
                 mode='lines',
                 name='Stable Price',
-                line=dict(color='#00ff88', width=2),
-                hovertemplate='<b>Date:</b> %{x|%Y-%m-%d}<br><b>Price:</b> $%{y:,.2f}<extra></extra>'
+                line=dict(color='#00ff88', width=2)
             ),
             row=1, col=1
         )
-        
-        # Add volatile period trace
+
         fig.add_trace(
             go.Scatter(
                 x=volatile_df['Date'],
                 y=volatile_df['Close'],
                 mode='lines',
                 name='Volatile Price',
-                line=dict(color='#ff6b9d', width=2),
-                hovertemplate='<b>Date:</b> %{x|%Y-%m-%d}<br><b>Price:</b> $%{y:,.2f}<extra></extra>'
+                line=dict(color='#ff6b9d', width=2)
             ),
             row=2, col=1
         )
-        
-        # Update x-axes for both rows
-        fig.update_xaxes(
-            row=1, col=1,
-            gridcolor='#1a1f2e',
-            showgrid=True
-        )
-        fig.update_xaxes(
-            row=2, col=1,
-            gridcolor='#1a1f2e',
-            showgrid=True,
-            title=dict(text='Date', font=dict(color='#ffffff'), size=12)
-        )
-        
-        # Update y-axes for both rows
-        fig.update_yaxes(
-            row=1, col=1,
-            gridcolor='#1a1f2e',
-            showgrid=True,
-            tickprefix='$',
-            tickformat=',.0f',
-            title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
-        )
-        fig.update_yaxes(
-            row=2, col=1,
-            gridcolor='#1a1f2e',
-            showgrid=True,
-            tickprefix='$',
-            tickformat=',.0f',
-            title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
-        )
-        
+
     elif has_stable:
-        # Only stable data - single subplot
-        fig = make_subplots(
-            rows=1, cols=1,
-            subplot_titles=('Stable Period (Low Volatility)',)
-        )
-        
+        fig = make_subplots(rows=1, cols=1,
+                            subplot_titles=('Stable Period (Low Volatility)',))
+
         fig.add_trace(
             go.Scatter(
                 x=stable_df['Date'],
                 y=stable_df['Close'],
                 mode='lines',
                 name='Stable Price',
-                line=dict(color='#00ff88', width=2),
-                hovertemplate='<b>Date:</b> %{x|%Y-%m-%d}<br><b>Price:</b> $%{y:,.2f}<extra></extra>'
+                line=dict(color='#00ff88', width=2)
             )
         )
-        
-        fig.update_xaxes(
-            gridcolor='#1a1f2e',
-            showgrid=True,
-            title=dict(text='Date', font=dict(color='#ffffff'), size=12)
-        )
-        
-        fig.update_yaxes(
-            gridcolor='#1a1f2e',
-            showgrid=True,
-            tickprefix='$',
-            tickformat=',.0f',
-            title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
-        )
-        
+
     else:
-        # Only volatile data - single subplot
-        fig = make_subplots(
-            rows=1, cols=1,
-            subplot_titles=('Volatile Period (High Volatility)',)
-        )
-        
+        fig = make_subplots(rows=1, cols=1,
+                            subplot_titles=('Volatile Period (High Volatility)',))
+
         fig.add_trace(
             go.Scatter(
                 x=volatile_df['Date'],
                 y=volatile_df['Close'],
                 mode='lines',
                 name='Volatile Price',
-                line=dict(color='#ff6b9d', width=2),
-                hovertemplate='<b>Date:</b> %{x|%Y-%m-%d}<br><b>Price:</b> $%{y:,.2f}<extra></extra>'
+                line=dict(color='#ff6b9d', width=2)
             )
         )
-        
-        fig.update_xaxes(
-            gridcolor='#1a1f2e',
-            showgrid=True,
-            title=dict(text='Date', font=dict(color='#ffffff'), size=12)
+
+    # ✅ CORRECT axis structure
+    fig.update_xaxes(
+        gridcolor='#1a1f2e',
+        showgrid=True,
+        title=dict(
+            text='Date',
+            font=dict(color='#ffffff', size=12)
         )
-        
-        fig.update_yaxes(
-            gridcolor='#1a1f2e',
-            showgrid=True,
-            tickprefix='$',
-            tickformat=',.0f',
-            title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
+    )
+
+    fig.update_yaxes(
+        gridcolor='#1a1f2e',
+        showgrid=True,
+        tickprefix='$',
+        tickformat=',.0f',
+        title=dict(
+            text='Price (USD)',
+            font=dict(color='#ffffff', size=12)
         )
-    
+    )
+
     fig.update_layout(
         plot_bgcolor='#0a0e14',
         paper_bgcolor='#0a0e14',
@@ -725,16 +671,15 @@ def create_volatility_comparison_chart(df):
         showlegend=True,
         legend=dict(font=dict(color='#ffffff'))
     )
-    
+
     return fig
 
 
-def create_stable_volatile_comparison_side_by_side(amplitude=50, frequency=0.5, drift=0, days=30):
-    """
-    Create side-by-side comparison of stable vs volatile money (small vs big swings)
-    This is a key FA2 requirement
-    """
-    # Generate stable data (small swings)
+
+def create_stable_volatile_comparison_side_by_side(
+    amplitude=50, frequency=0.5, drift=0, days=30
+):
+
     df_stable = generate_simulated_data(
         days=days,
         pattern='sine',
@@ -743,8 +688,7 @@ def create_stable_volatile_comparison_side_by_side(amplitude=50, frequency=0.5, 
         drift=drift,
         volatility_level='stable'
     )
-    
-    # Generate volatile data (big swings)
+
     df_volatile = generate_simulated_data(
         days=days,
         pattern='sine',
@@ -753,8 +697,7 @@ def create_stable_volatile_comparison_side_by_side(amplitude=50, frequency=0.5, 
         drift=drift,
         volatility_level='volatile'
     )
-    
-    # Create subplots for side-by-side comparison
+
     fig = make_subplots(
         rows=2, cols=1,
         subplot_titles=(
@@ -763,66 +706,55 @@ def create_stable_volatile_comparison_side_by_side(amplitude=50, frequency=0.5, 
         ),
         vertical_spacing=0.15
     )
-    
-    # Add stable data trace
+
     fig.add_trace(
         go.Scatter(
             x=df_stable['Date'],
             y=df_stable['Close'],
             mode='lines',
             name='Stable Price',
-            line=dict(color='#00ff88', width=2),
-            hovertemplate='<b>Date:</b> %{x|%Y-%m-%d}<br><b>Price:</b> $%{y:,.2f}<extra></extra>'
+            line=dict(color='#00ff88', width=2)
         ),
         row=1, col=1
     )
-    
-    # Add volatile data trace
+
     fig.add_trace(
         go.Scatter(
             x=df_volatile['Date'],
             y=df_volatile['Close'],
             mode='lines',
             name='Volatile Price',
-            line=dict(color='#ff6b9d', width=2),
-            hovertemplate='<b>Date:</b> %{x|%Y-%m-%d}<br><b>Price:</b> $%{y:,.2f}<extra></extra>'
+            line=dict(color='#ff6b9d', width=2)
         ),
         row=2, col=1
     )
-    
-    # Update x-axes for both rows
+
+    # ✅ Correct axis structure
     fig.update_xaxes(
-        row=1, col=1,
-        gridcolor='#1a1f2e',
-        showgrid=True
-    )
-    fig.update_xaxes(
-        row=2, col=1,
         gridcolor='#1a1f2e',
         showgrid=True,
-        title=dict(text='Date', font=dict(color='#ffffff'), size=12)
+        title=dict(
+            text='Date',
+            font=dict(color='#ffffff', size=12)
+        )
     )
-    
-    # Update y-axes for both rows
+
     fig.update_yaxes(
-        row=1, col=1,
         gridcolor='#1a1f2e',
         showgrid=True,
         tickprefix='$',
         tickformat=',.0f',
-        title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
+        title=dict(
+            text='Price (USD)',
+            font=dict(color='#ffffff', size=12)
+        )
     )
-    fig.update_yaxes(
-        row=2, col=1,
-        gridcolor='#1a1f2e',
-        showgrid=True,
-        tickprefix='$',
-        tickformat=',.0f',
-        title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
-    )
-    
+
     fig.update_layout(
-        title=dict(text='Comparison: Stable Money vs Volatile Money', font=dict(size=18, color='#00d4ff')),
+        title=dict(
+            text='Comparison: Stable Money vs Volatile Money',
+            font=dict(size=18, color='#00d4ff')
+        ),
         plot_bgcolor='#0a0e14',
         paper_bgcolor='#0a0e14',
         font=dict(color='#ffffff', size=12),
@@ -830,8 +762,9 @@ def create_stable_volatile_comparison_side_by_side(amplitude=50, frequency=0.5, 
         showlegend=True,
         legend=dict(font=dict(color='#ffffff'))
     )
-    
+
     return fig
+
 
 
 # ============ MAIN APP ============
