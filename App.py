@@ -118,7 +118,7 @@ def load_crypto_data(file_path):
     """Load and process cryptocurrency dataset"""
     try:
         # Read CSV file
-        df = pd.read_csv(r"C:\Users\Harini Priya\OneDrive\Desktop\AI\AI(B)\math AI\Crypto_data.crdownload")
+        df = pd.read_csv(Crypto_data.crdownload)
         
         # Convert Unix timestamp to datetime
         df['Date'] = pd.to_datetime(df['Timestamp'], unit='s')
