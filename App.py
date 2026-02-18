@@ -673,16 +673,7 @@ def main():
         
         st.markdown("---")
         
-        # Dataset Info
-        st.markdown("""
-        **Dataset Information**
-        
-        - Default: Crypto_data.crdownload
-        - Records: Last 30 days only
-        - Period: Most recent 30 days
-        - Granularity: Minute-level (aggregated)
-        - Performance: Optimized for fast loading
-        """)
+       
     
     # Load Data
     data_file = "Crypto_data.crdownload"
@@ -866,35 +857,6 @@ def main():
             hide_index=True
         )
     
-    # Footer Information
-    st.markdown("---")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("#### About This Dashboard")
-        st.markdown("""
-        This interactive dashboard analyzes real cryptocurrency market data from your dataset.
-        The data has been filtered to show the selected time range and aggregated according
-        to your chosen granularity level.
-        
-        **Key Features:**
-        - Line Graph of Price Over Time
-        - High vs Low Comparison
-        - Volume Analysis
-        - Stable vs Volatile Periods Analysis
-        """)
-    
-    with col2:
-        st.markdown("#### Analysis Components")
-        st.markdown("""
-        - **Price Movement:** Historical close prices over time
-        - **High vs Low:** Daily price range analysis
-        - **Trading Volume:** Market activity and liquidity
-        - **Volatility Index:** Price fluctuation measurement
-        - **Stable Periods:** Low volatility, flat price movement
-        - **Volatile Periods:** High volatility, sharp price changes
-        """)
-
-
+   
 if __name__ == "__main__":
     main()
