@@ -819,10 +819,6 @@ def main():
     
     st.markdown("---")
     
-    # Info message about data source
-    if data_source == "Real Data":
-        st.info("ℹ️ **Real Data mode requires a CSV file**. For the best experience, try **Simulated Data mode** which works instantly without any file upload!")
-    
     # Sidebar - Control Panel
     with st.sidebar:
         st.markdown("## Controls")
