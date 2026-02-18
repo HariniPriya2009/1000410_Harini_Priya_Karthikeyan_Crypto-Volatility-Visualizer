@@ -64,12 +64,12 @@ Expandable section for detailed view
 📁 File Structure
 HariniPriya2009/1000410_Harini_Priya_Karthikeyan_Crypto-Volatility-Visualizer
 ├── Crypto_data.crdownload          
-├── crypto_volatility_app.py        
+├── App.py        
 ├── requirements.txt                          
 └── README.md                      
 
 
-# Run the app
+
 
 📝 Data Format Requirements
 
@@ -98,10 +98,4 @@ Responsive layout
 Custom CSS styling
 
 
-📊 Sample Results
-With your dataset (last 30 days):
-
-Total Records: 43,201 (minute-level) → 31 days (aggregated)
-Average Price: $37.65
-Volatility Index: 5.68%
-Date Range: February 16, 2013 to March 18, 2013
+C
