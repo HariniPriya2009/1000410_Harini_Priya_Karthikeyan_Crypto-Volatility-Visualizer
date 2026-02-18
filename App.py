@@ -622,14 +622,30 @@ def create_volatility_comparison_chart(df):
             row=2, col=1
         )
         
-        # Update both x-axes and y-axes
+        # Update x-axes for both rows
         fig.update_xaxes(
+            row=1, col=1,
+            gridcolor='#1a1f2e',
+            showgrid=True
+        )
+        fig.update_xaxes(
+            row=2, col=1,
             gridcolor='#1a1f2e',
             showgrid=True,
             title=dict(text='Date', font=dict(color='#ffffff'), size=12)
         )
         
+        # Update y-axes for both rows
         fig.update_yaxes(
+            row=1, col=1,
+            gridcolor='#1a1f2e',
+            showgrid=True,
+            tickprefix='$',
+            tickformat=',.0f',
+            title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
+        )
+        fig.update_yaxes(
+            row=2, col=1,
             gridcolor='#1a1f2e',
             showgrid=True,
             tickprefix='$',
@@ -774,14 +790,30 @@ def create_stable_volatile_comparison_side_by_side(amplitude=50, frequency=0.5, 
         row=2, col=1
     )
     
-    # Update both x-axes and y-axes
+    # Update x-axes for both rows
     fig.update_xaxes(
+        row=1, col=1,
+        gridcolor='#1a1f2e',
+        showgrid=True
+    )
+    fig.update_xaxes(
+        row=2, col=1,
         gridcolor='#1a1f2e',
         showgrid=True,
         title=dict(text='Date', font=dict(color='#ffffff'), size=12)
     )
     
+    # Update y-axes for both rows
     fig.update_yaxes(
+        row=1, col=1,
+        gridcolor='#1a1f2e',
+        showgrid=True,
+        tickprefix='$',
+        tickformat=',.0f',
+        title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
+    )
+    fig.update_yaxes(
+        row=2, col=1,
         gridcolor='#1a1f2e',
         showgrid=True,
         tickprefix='$',
