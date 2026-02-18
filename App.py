@@ -4,6 +4,7 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
+import io
 
 # Page Configuration
 st.set_page_config(
@@ -13,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Premium Dark Theme with proper contrast
+# Custom CSS for Premium Dark Theme with WHITE text
 st.markdown("""
 <style>
     /* Main background */
@@ -21,18 +22,13 @@ st.markdown("""
         background-color: #0E1117;
     }
     
-    /* Sidebar styling - DARK background for white text visibility */
+    /* Sidebar styling */
     [data-testid="stSidebar"] {
-        background-color: #0a0e14 !important;
+        background-color: #0a0e14;
         border-right: 1px solid #1a1f2e;
     }
     
-    /* Sidebar content area */
-    [data-testid="stSidebar"] > div {
-        background-color: #0a0e14 !important;
-    }
-    
-    /* Metric cards */
+    /* Metric cards - WHITE text */
     [data-testid="stMetricValue"] {
         font-size: 2rem;
         font-weight: 300;
@@ -47,31 +43,26 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* Headers - WHITE text with proper contrast */
+    /* Headers - WHITE text */
     h1, h2, h3, h4, h5, h6 {
         font-weight: 400;
         color: #ffffff !important;
     }
     
-    /* Main content text - WHITE */
-    .main .stMarkdown {
+    /* Regular text - WHITE */
+    p, div, span, label {
         color: #ffffff !important;
     }
     
-    /* Paragraphs and regular text */
-    p, .stMarkdown, div[data-testid="stMarkdownContainer"] {
-        color: #ffffff !important;
-    }
-    
-    /* Captions */
+    /* Captions - WHITE */
     .stCaption {
-        color: #e0e0e0 !important;
+        color: #ffffff !important;
     }
     
-    /* Info boxes - WHITE text on dark background */
+    /* Info boxes - WHITE text */
     .stAlert {
-        background-color: #1a1f2e !important;
-        border: 1px solid #2d3748 !important;
+        background-color: #0a0e14;
+        border: 1px solid #1a1f2e;
         border-radius: 4px;
         color: #ffffff !important;
     }
@@ -80,111 +71,88 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* Selectbox labels - make them visible */
-    .stSelectbox > label {
-        color: #00d4ff !important;
-        font-weight: 600;
-    }
-    
-    /* Selectbox div */
-    .stSelectbox div[data-baseweb="select"] {
-        background-color: #1a1f2e !important;
-    }
-    
-    /* Checkbox labels */
-    .stCheckbox > label {
+    /* Sliders - WHITE labels */
+    .stSlider label {
         color: #ffffff !important;
     }
     
-    /* File uploader labels */
-    [data-testid="stFileUploader"] > label {
+    /* Selectbox - WHITE text */
+    .stSelectbox label {
         color: #ffffff !important;
     }
     
-    /* Success messages */
+    /* Checkbox - WHITE text */
+    .stCheckbox label {
+        color: #ffffff !important;
+    }
+    
+    /* File uploader - WHITE text */
+    [data-testid="stFileUploader"] label {
+        color: #ffffff !important;
+    }
+    
+    /* Success messages - WHITE */
     .stSuccess {
-        color: #00ff88 !important;
-        font-weight: 600;
+        color: #ffffff !important;
     }
     
     .stWarning {
-        color: #ffcc00 !important;
-        font-weight: 600;
-    }
-    
-    .stError {
-        color: #ff4444 !important;
-        font-weight: 600;
-    }
-    
-    /* Dataframe */
-    .dataframe {
         color: #ffffff !important;
     }
     
-    /* Make all selectbox options readable */
-    .stSelectbox option {
-        background-color: #1a1f2e;
-        color: #ffffff;
+    .stError {
+        color: #ffffff !important;
+    }
+    
+    /* Dataframe - WHITE text */
+    .dataframe {
+        color: #ffffff !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ============ DATA LOADING FUNCTIONS (NO CACHING) ============
+# ============ DATA LOADING FUNCTIONS (NO CACHING TO FIX ERROR) ============
 
-def load_crypto_data(file_path, days=30):
-    """Load and process cryptocurrency dataset - optimized for last 30 days only"""
+def load_crypto_data(file_path):
+    """Load and process cryptocurrency dataset"""
     try:
-        # Read CSV file with explicit parameters - read in chunks for better performance
-        # First, read just the last 100000 rows (approximately 70 days of minute data)
-        df = pd.read_csv(file_path, on_bad_lines='skip', engine='python', nrows=100000)
-        
-        # Check if required columns exist
-        required_columns = ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
-        missing_columns = [col for col in required_columns if col not in df.columns]
-        
-        if missing_columns:
-            st.error(f"Missing columns: {missing_columns}")
-            st.error(f"Available columns: {list(df.columns)}")
-            return None
+        # Read CSV file
+        df = pd.read_csv(r"C:\Users\Harini Priya\OneDrive\Desktop\AI\AI(B)\math AI\Crypto_data.crdownload")
         
         # Convert Unix timestamp to datetime
-        try:
-            df['Date'] = pd.to_datetime(df['Timestamp'], unit='s', errors='coerce')
-            # Drop rows with invalid dates
-            df = df.dropna(subset=['Date'])
-        except Exception as e:
-            st.error(f"Error converting timestamp: {e}")
-            return None
+        df['Date'] = pd.to_datetime(df['Timestamp'], unit='s')
         
         # Reorder columns
         df = df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
         
-        # Remove rows with zero or negative volume
+        # Remove rows with zero or negative volume (optional cleaning)
         df = df[df['Volume'] > 0]
         
-        # Sort by date and filter to last 30 days
+        # Sort by date
         df = df.sort_values('Date').reset_index(drop=True)
         
-        # Get the latest date
-        latest_date = df['Date'].max()
-        
-        # Calculate the cutoff date (30 days before latest)
-        cutoff_date = latest_date - timedelta(days=days)
-        
-        # Filter to last 30 days only
-        df = df[df['Date'] >= cutoff_date].copy()
-        
         return df
-    except FileNotFoundError:
-        st.error(f"File not found: {file_path}")
-        st.error("Please ensure the CSV file is in the same directory as the app.")
-        return None
     except Exception as e:
-        st.error(f"Error loading data: {str(e)}")
-        st.error("Please check the file format and try again.")
+        st.error(f"Error loading data: {e}")
         return None
+
+
+def filter_data_by_days(df, days):
+    """Filter data to show only the last N days"""
+    if df is None or len(df) == 0:
+        return df
+    
+    # Get the latest date in the dataset
+    latest_date = df['Date'].max()
+    
+    # Calculate the cutoff date
+    cutoff_date = latest_date - timedelta(days=days)
+    
+    # Filter data
+    filtered_df = df[df['Date'] >= cutoff_date].copy()
+    
+    return filtered_df
 
 
 def aggregate_to_daily(df):
@@ -479,41 +447,29 @@ def create_stable_volatile_comparison_chart(df):
 
 
 def create_volatility_comparison_chart(df):
-    """Create comparison chart showing stable vs volatile periods side by side - FIXED VERSION"""
+    """Create comparison chart showing stable vs volatile periods side by side"""
     if df is None or len(df) == 0:
         return go.Figure()
-
+    
     # Identify periods
     df_with_periods = identify_stable_volatile_periods(df)
-
-    if df_with_periods is None or len(df_with_periods) == 0:
+    
+    if df_with_periods is None:
         return go.Figure()
-
+    
+    # Create subplots
+    fig = make_subplots(
+        rows=2, cols=1,
+        subplot_titles=('Stable Period (Low Volatility)', 'Volatile Period (High Volatility)'),
+        vertical_spacing=0.15
+    )
+    
     # Separate stable and volatile data
     stable_df = df_with_periods[df_with_periods['Period_Type'] == 'Stable'].copy()
     volatile_df = df_with_periods[df_with_periods['Period_Type'] == 'Volatile'].copy()
-
-    has_stable = len(stable_df) > 0
-    has_volatile = len(volatile_df) > 0
-
-    if not has_stable and not has_volatile:
-        return go.Figure()
-
-    # ===============================
-    # CASE 1: Both Stable & Volatile
-    # ===============================
-    if has_stable and has_volatile:
-
-        fig = make_subplots(
-            rows=2,
-            cols=1,
-            subplot_titles=(
-                'Stable Period (Low Volatility)',
-                'Volatile Period (High Volatility)'
-            ),
-            vertical_spacing=0.15
-        )
-
+    
+    # Add stable period trace
+    if len(stable_df) > 0:
         fig.add_trace(
             go.Scatter(
                 x=stable_df['Date'],
@@ -525,7 +481,9 @@ def create_volatility_comparison_chart(df):
             ),
             row=1, col=1
         )
-
+    
+    # Add volatile period trace
+    if len(volatile_df) > 0:
         fig.add_trace(
             go.Scatter(
                 x=volatile_df['Date'],
@@ -537,84 +495,31 @@ def create_volatility_comparison_chart(df):
             ),
             row=2, col=1
         )
-
-    # ===============================
-    # CASE 2: Only Stable
-    # ===============================
-    elif has_stable:
-
-        fig = make_subplots(
-            rows=1,
-            cols=1,
-            subplot_titles=('Stable Period (Low Volatility)',)
-        )
-
-        fig.add_trace(
-            go.Scatter(
-                x=stable_df['Date'],
-                y=stable_df['Close'],
-                mode='lines',
-                name='Stable Price',
-                line=dict(color='#00ff88', width=2),
-                hovertemplate='<b>Date:</b> %{x|%Y-%m-%d}<br><b>Price:</b> $%{y:,.2f}<extra></extra>'
-            )
-        )
-
-    # ===============================
-    # CASE 3: Only Volatile
-    # ===============================
-    else:
-
-        fig = make_subplots(
-            rows=1,
-            cols=1,
-            subplot_titles=('Volatile Period (High Volatility)',)
-        )
-
-        fig.add_trace(
-            go.Scatter(
-                x=volatile_df['Date'],
-                y=volatile_df['Close'],
-                mode='lines',
-                name='Volatile Price',
-                line=dict(color='#ff6b9d', width=2),
-                hovertemplate='<b>Date:</b> %{x|%Y-%m-%d}<br><b>Price:</b> $%{y:,.2f}<extra></extra>'
-            )
-        )
-
-    # ===============================
-    # FIXED AXIS FORMATTING
-    # ===============================
-
+    
+    # Update layout
     fig.update_xaxes(
         gridcolor='#1a1f2e',
         showgrid=True,
-        title=dict(
-            text='Date',
-            font=dict(color='#ffffff', size=12)
-        )
+        title=dict(text='Date', font=dict(color='#ffffff'), size=12)
     )
-
+    
     fig.update_yaxes(
         gridcolor='#1a1f2e',
         showgrid=True,
         tickprefix='$',
         tickformat=',.0f',
-        title=dict(
-            text='Price (USD)',
-            font=dict(color='#ffffff', size=12)
-        )
+        title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
     )
-
+    
     fig.update_layout(
         plot_bgcolor='#0a0e14',
         paper_bgcolor='#0a0e14',
         font=dict(color='#ffffff', size=12),
-        height=700 if (has_stable and has_volatile) else 400,
+        height=700,
         showlegend=True,
         legend=dict(font=dict(color='#ffffff'))
     )
-
+    
     return fig
 
 
@@ -641,15 +546,20 @@ def main():
         st.markdown("##### Customize data view")
         st.markdown("")
         
-        # Fixed to 30 days for better performance
-        st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**TIME RANGE**</p>', unsafe_allow_html=True)
-        st.markdown('<p style="color: #ffffff; font-size: 12px;">Fixed to last 30 days for optimal performance</p>', unsafe_allow_html=True)
-        days_range = 30  # Fixed to 30 days
+        # Data Range Selection
+        st.markdown("**TIME RANGE**")
+        days_range = st.selectbox(
+            "Select time range",
+            [7, 15, 30, 60, 90],
+            index=2,
+            label_visibility="collapsed",
+            format_func=lambda x: f"{x} Days"
+        )
         
         st.markdown("")
         
         # Data Granularity
-        st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**DATA GRANULARITY**</p>', unsafe_allow_html=True)
+        st.markdown("**DATA GRANULARITY**")
         granularity = st.selectbox(
             "Select data granularity",
             ["Daily", "Hourly", "Raw (Minute-level)"],
@@ -659,7 +569,7 @@ def main():
         st.markdown("")
         
         # File Upload (optional - use default dataset)
-        st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**DATA SOURCE**</p>', unsafe_allow_html=True)
+        st.markdown("**DATA SOURCE**")
         use_default = st.checkbox("Use default dataset", value=True)
         
         if not use_default:
@@ -678,10 +588,9 @@ def main():
         **Dataset Information**
         
         - Default: Crypto_data.crdownload
-        - Records: Last 30 days only
-        - Period: Most recent 30 days
-        - Granularity: Minute-level (aggregated)
-        - Performance: Optimized for fast loading
+        - Records: 637,114 data points
+        - Period: 2011-2013
+        - Granularity: Minute-level
         """)
     
     # Load Data
@@ -696,29 +605,29 @@ def main():
         st.warning("Please upload a dataset or use the default data.")
         st.stop()
     
-    # Load only the last 30 days of data for better performance
-    with st.spinner("Loading and processing last 30 days of data..."):
-        df = load_crypto_data(data_file, days=30)
+    # Load the dataset with progress indicator
+    with st.spinner("Loading and processing data..."):
+        df = load_crypto_data(data_file)
     
     if df is None or len(df) == 0:
-        st.error("Failed to load data. Please check the file format and ensure the file is in the same directory.")
-        st.markdown("""
-        **Troubleshooting Tips:**
-        1. Ensure the CSV file is in the same folder as this Python script
-        2. Check that the file name is exactly: `Crypto_data.crdownload`
-        3. Verify the file has these columns: Timestamp, Open, High, Low, Close, Volume
-        4. Try renaming the file to `Crypto_data.csv` if needed
-        """)
+        st.error("Failed to load data. Please check the file format.")
         st.stop()
     
     # Show data loading success
-    st.success(f"✅ Loaded {len(df):,} records from the last 30 days")
+    st.success(f"✅ Loaded {len(df):,} records from the dataset")
+    
+    # Filter data by selected time range
+    df_filtered = filter_data_by_days(df, days_range)
+    
+    if df_filtered is None or len(df_filtered) == 0:
+        st.error(f"No data available for the last {days_range} days.")
+        st.stop()
     
     # Apply granularity
     if granularity == "Daily":
-        df_display = aggregate_to_daily(df)
+        df_display = aggregate_to_daily(df_filtered)
     elif granularity == "Hourly":
-        df_display = df.set_index('Date').resample('H').agg({
+        df_display = df_filtered.set_index('Date').resample('H').agg({
             'Open': 'first',
             'High': 'max',
             'Low': 'min',
@@ -726,7 +635,7 @@ def main():
             'Volume': 'sum'
         }).dropna().reset_index()
     else:  # Raw data
-        df_display = df.copy()
+        df_display = df_filtered.copy()
     
     # Display data info
     st.markdown("### Data Overview")
@@ -743,7 +652,7 @@ def main():
         st.metric(
             "Date Range",
             f"{df_display['Date'].min().strftime('%b %d')} - {df_display['Date'].max().strftime('%b %d, %Y')}",
-            help="Last 30 days of data"
+            help="Selected time period"
         )
     
     with col3:
@@ -755,9 +664,9 @@ def main():
     
     with col4:
         st.metric(
-            "Time Period",
-            "30 Days",
-            help="Fixed time range for optimal performance"
+            "Data Points",
+            f"{days_range} days",
+            help="Time range selected"
         )
     
     st.markdown("")
@@ -799,7 +708,7 @@ def main():
     st.markdown("### Price Movement Over Time")
     st.markdown("##### Line graph showing how the price moves up and down")
     st.plotly_chart(
-        create_price_chart(df_display, f"Price Movement - Last 30 Days ({granularity})"),
+        create_price_chart(df_display, f"Price Movement - Last {days_range} Days ({granularity})"),
         use_container_width=True,
         config={'displayModeBar': False}
     )
