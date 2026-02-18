@@ -819,6 +819,10 @@ def main():
     
     st.markdown("---")
     
+    # Info message about data source
+    if data_source == "Real Data":
+        st.info("ℹ️ **Real Data mode requires a CSV file**. For the best experience, try **Simulated Data mode** which works instantly without any file upload!")
+    
     # Sidebar - Control Panel
     with st.sidebar:
         st.markdown("## Controls")
@@ -829,13 +833,16 @@ def main():
         st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**DATA SOURCE**</p>', unsafe_allow_html=True)
         data_source = st.radio(
             "Select data source",
-            ["Real Data", "Simulated Data"],
+            ["Simulated Data", "Real Data"],
             label_visibility="collapsed"
         )
         
         st.markdown("")
         
         if data_source == "Real Data":
+            # Warning about CSV file requirement
+            st.warning("⚠️ Real Data mode requires the CSV file to be uploaded or present in the app directory.")
+            
             # Fixed to 30 days for better performance
             st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**TIME RANGE**</p>', unsafe_allow_html=True)
             st.markdown('<p style="color: #ffffff; font-size: 12px;">Fixed to last 30 days for optimal performance</p>', unsafe_allow_html=True)
@@ -982,13 +989,21 @@ def main():
             df = load_crypto_data(data_file, days=30)
         
         if df is None or len(df) == 0:
-            st.error("Failed to load data. Please check the file format and ensure the file is in the same directory.")
+            st.error("Failed to load data. The CSV file was not found.")
             st.markdown("""
-            **Troubleshooting Tips:**
-            1. Ensure the CSV file is in the same folder as this Python script
-            2. Check that the file name is exactly: `Crypto_data.crdownload`
-            3. Verify the file has these columns: Timestamp, Open, High, Low, Close, Volume
-            4. Try renaming the file to `Crypto_data.csv` if needed
+            **⚠️ Real Data Mode Issue**
+            
+            To use Real Data mode, you need to:
+            1. **Upload your CSV file** using the file uploader in the sidebar
+            2. **Or ensure the file is present** in the app directory
+            
+            **💡 Quick Fix:**
+            Try **Simulated Data mode** instead! It works instantly without any file and provides all the same visualizations with customizable parameters.
+            
+            **CSV File Requirements:**
+            - File must contain columns: `Timestamp, Open, High, Low, Close, Volume`
+            - Supported formats: `.csv` or `.crdownload`
+            - File size should be reasonable (under 100MB recommended)
             """)
             st.stop()
         
