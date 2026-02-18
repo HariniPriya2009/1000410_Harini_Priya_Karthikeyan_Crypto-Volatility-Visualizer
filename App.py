@@ -482,34 +482,38 @@ def create_volatility_comparison_chart(df):
     """Create comparison chart showing stable vs volatile periods side by side - FIXED VERSION"""
     if df is None or len(df) == 0:
         return go.Figure()
-    
+
     # Identify periods
     df_with_periods = identify_stable_volatile_periods(df)
-    
+
     if df_with_periods is None or len(df_with_periods) == 0:
         return go.Figure()
-    
+
     # Separate stable and volatile data
     stable_df = df_with_periods[df_with_periods['Period_Type'] == 'Stable'].copy()
     volatile_df = df_with_periods[df_with_periods['Period_Type'] == 'Volatile'].copy()
-    
-    # Check if we have data for both periods
+
     has_stable = len(stable_df) > 0
     has_volatile = len(volatile_df) > 0
-    
+
     if not has_stable and not has_volatile:
         return go.Figure()
-    
-    # Create subplots with appropriate number of rows
+
+    # ===============================
+    # CASE 1: Both Stable & Volatile
+    # ===============================
     if has_stable and has_volatile:
-        # Two subplots for stable and volatile
+
         fig = make_subplots(
-            rows=2, cols=1,
-            subplot_titles=('Stable Period (Low Volatility)', 'Volatile Period (High Volatility)'),
+            rows=2,
+            cols=1,
+            subplot_titles=(
+                'Stable Period (Low Volatility)',
+                'Volatile Period (High Volatility)'
+            ),
             vertical_spacing=0.15
         )
-        
-        # Add stable period trace
+
         fig.add_trace(
             go.Scatter(
                 x=stable_df['Date'],
@@ -521,8 +525,7 @@ def create_volatility_comparison_chart(df):
             ),
             row=1, col=1
         )
-        
-        # Add volatile period trace
+
         fig.add_trace(
             go.Scatter(
                 x=volatile_df['Date'],
@@ -534,29 +537,18 @@ def create_volatility_comparison_chart(df):
             ),
             row=2, col=1
         )
-        
-        # Update both x-axes and y-axes
-        fig.update_xaxes(
-            gridcolor='#1a1f2e',
-            showgrid=True,
-            title=dict(text='Date', font=dict(color='#ffffff'), size=12)
-        )
-        
-        fig.update_yaxes(
-            gridcolor='#1a1f2e',
-            showgrid=True,
-            tickprefix='$',
-            tickformat=',.0f',
-            title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
-        )
-        
+
+    # ===============================
+    # CASE 2: Only Stable
+    # ===============================
     elif has_stable:
-        # Only stable data - single subplot
+
         fig = make_subplots(
-            rows=1, cols=1,
+            rows=1,
+            cols=1,
             subplot_titles=('Stable Period (Low Volatility)',)
         )
-        
+
         fig.add_trace(
             go.Scatter(
                 x=stable_df['Date'],
@@ -567,28 +559,18 @@ def create_volatility_comparison_chart(df):
                 hovertemplate='<b>Date:</b> %{x|%Y-%m-%d}<br><b>Price:</b> $%{y:,.2f}<extra></extra>'
             )
         )
-        
-        fig.update_xaxes(
-            gridcolor='#1a1f2e',
-            showgrid=True,
-            title=dict(text='Date', font=dict(color='#ffffff'), size=12)
-        )
-        
-        fig.update_yaxes(
-            gridcolor='#1a1f2e',
-            showgrid=True,
-            tickprefix='$',
-            tickformat=',.0f',
-            title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
-        )
-        
+
+    # ===============================
+    # CASE 3: Only Volatile
+    # ===============================
     else:
-        # Only volatile data - single subplot
+
         fig = make_subplots(
-            rows=1, cols=1,
+            rows=1,
+            cols=1,
             subplot_titles=('Volatile Period (High Volatility)',)
         )
-        
+
         fig.add_trace(
             go.Scatter(
                 x=volatile_df['Date'],
@@ -599,21 +581,31 @@ def create_volatility_comparison_chart(df):
                 hovertemplate='<b>Date:</b> %{x|%Y-%m-%d}<br><b>Price:</b> $%{y:,.2f}<extra></extra>'
             )
         )
-        
-        fig.update_xaxes(
-            gridcolor='#1a1f2e',
-            showgrid=True,
-            title=dict(text='Date', font=dict(color='#ffffff'), size=12)
+
+    # ===============================
+    # FIXED AXIS FORMATTING
+    # ===============================
+
+    fig.update_xaxes(
+        gridcolor='#1a1f2e',
+        showgrid=True,
+        title=dict(
+            text='Date',
+            font=dict(color='#ffffff', size=12)
         )
-        
-        fig.update_yaxes(
-            gridcolor='#1a1f2e',
-            showgrid=True,
-            tickprefix='$',
-            tickformat=',.0f',
-            title=dict(text='Price (USD)', font=dict(color='#ffffff'), size=12)
+    )
+
+    fig.update_yaxes(
+        gridcolor='#1a1f2e',
+        showgrid=True,
+        tickprefix='$',
+        tickformat=',.0f',
+        title=dict(
+            text='Price (USD)',
+            font=dict(color='#ffffff', size=12)
         )
-    
+    )
+
     fig.update_layout(
         plot_bgcolor='#0a0e14',
         paper_bgcolor='#0a0e14',
@@ -622,7 +614,7 @@ def create_volatility_comparison_chart(df):
         showlegend=True,
         legend=dict(font=dict(color='#ffffff'))
     )
-    
+
     return fig
 
 
