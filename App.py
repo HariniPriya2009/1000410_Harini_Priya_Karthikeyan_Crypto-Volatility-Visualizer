@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
 
-# Page Configuration
+
 st.set_page_config(
     page_title="Crypto Volatility Visualizer",
     page_icon="📊",
@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Premium Dark Theme with proper contrast
+
 st.markdown("""
 <style>
     /* Main background */
@@ -142,17 +142,10 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
-# ============ DATA LOADING FUNCTIONS (NO CACHING) ============
-
 def load_crypto_data(file_path, days=30):
     """Load and process cryptocurrency dataset - optimized for last 30 days only"""
     try:
-        # Read CSV file with explicit parameters - read in chunks for better performance
-        # First, read just the last 100000 rows (approximately 70 days of minute data)
         df = pd.read_csv(file_path, on_bad_lines='skip', engine='python', nrows=100000)
-        
-        # Check if required columns exist
         required_columns = ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
         missing_columns = [col for col in required_columns if col not in df.columns]
         
@@ -161,7 +154,6 @@ def load_crypto_data(file_path, days=30):
             st.error(f"Available columns: {list(df.columns)}")
             return None
         
-        # Convert Unix timestamp to datetime
         try:
             df['Date'] = pd.to_datetime(df['Timestamp'], unit='s', errors='coerce')
             # Drop rows with invalid dates
@@ -169,23 +161,12 @@ def load_crypto_data(file_path, days=30):
         except Exception as e:
             st.error(f"Error converting timestamp: {e}")
             return None
-        
-        # Reorder columns
+
         df = df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
-        
-        # Remove rows with zero or negative volume
         df = df[df['Volume'] > 0]
-        
-        # Sort by date and filter to last 30 days
         df = df.sort_values('Date').reset_index(drop=True)
-        
-        # Get the latest date
         latest_date = df['Date'].max()
-        
-        # Calculate the cutoff date (30 days before latest)
         cutoff_date = latest_date - timedelta(days=days)
-        
-        # Filter to last 30 days only
         df = df[df['Date'] >= cutoff_date].copy()
         
         return df
@@ -197,9 +178,6 @@ def load_crypto_data(file_path, days=30):
         st.error(f"Error loading data: {str(e)}")
         st.error("Please check the file format and try again.")
         return None
-
-
-# ============ SIMULATED DATA GENERATION FUNCTIONS ============
 
 def generate_simulated_data(days=30, pattern='sine', amplitude=50, frequency=0.5, drift=0, volatility_level='stable'):
     """
@@ -214,10 +192,7 @@ def generate_simulated_data(days=30, pattern='sine', amplitude=50, frequency=0.5
     - volatility_level: 'stable' (small swings) or 'volatile' (big swings)
     """
     
-    # Create date range
     dates = pd.date_range(end=datetime.now(), periods=days*24*60, freq='T')  # Minute data
-    
-    # Adjust amplitude based on volatility level
     if volatility_level == 'stable':
         amplitude = amplitude * 0.3  # Small swings
         noise_level = 2
@@ -229,46 +204,33 @@ def generate_simulated_data(days=30, pattern='sine', amplitude=50, frequency=0.5
     t = np.arange(len(dates))
     
     if pattern == 'sine':
-        # Sine/cosine waves pattern
+       
         base_price = 1000
         price = base_price + amplitude * np.sin(2 * np.pi * frequency * t / (24*60))
         price += amplitude * 0.5 * np.cos(2 * np.pi * frequency * 0.5 * t / (24*60))
-        
-        # Add long-term drift
         price += drift * t / (24*60)
-        
-        # Add some noise
         price += np.random.normal(0, noise_level, len(dates))
         
     elif pattern == 'random':
-        # Random walk with drift
         base_price = 1000
         returns = np.random.normal(drift/100, amplitude/500, len(dates))
         price = base_price * (1 + np.cumsum(returns))
         
-        # Add additional noise
         price += np.random.normal(0, noise_level, len(dates))
-    
-    # Ensure price is positive
+  
     price = np.maximum(price, 1)
-    
-    # Create dataframe
     df = pd.DataFrame({
         'Date': dates,
         'Close': price
     })
     
-    # Generate OHLCV data
+  
     df['Open'] = df['Close'].shift(1).fillna(df['Close'].iloc[0])
     df['High'] = df[['Open', 'Close']].max(axis=1) + np.random.uniform(0, amplitude*0.05, len(df))
     df['Low'] = df[['Open', 'Close']].min(axis=1) - np.random.uniform(0, amplitude*0.05, len(df))
     df['Volume'] = np.random.uniform(1000, 10000, len(df))
-    
-    # Ensure Low <= Open/Close <= High
     df['Low'] = np.minimum(df['Low'], df[['Open', 'Close']].min(axis=1))
     df['High'] = np.maximum(df['High'], df[['Open', 'Close']].max(axis=1))
-    
-    # Clean data
     df = df[df['Volume'] > 0]
     
     return df
@@ -279,7 +241,6 @@ def aggregate_to_daily(df):
     if df is None or len(df) == 0:
         return df
     
-    # Set Date as index and resample to daily
     df_daily = df.set_index('Date').resample('D').agg({
         'Open': 'first',
         'High': 'max',
@@ -288,7 +249,6 @@ def aggregate_to_daily(df):
         'Volume': 'sum'
     }).dropna()
     
-    # Reset index
     df_daily = df_daily.reset_index()
     
     return df_daily
@@ -338,9 +298,6 @@ def identify_stable_volatile_periods(df, threshold_percent=5):
     )
     
     return df_copy
-
-
-# ============ VISUALIZATION FUNCTIONS ============
 
 def create_price_chart(df, title, color='#00d4ff'):
     """Create main price movement chart (Line Graph of Price Over Time)"""
@@ -642,7 +599,7 @@ def create_volatility_comparison_chart(df):
             )
         )
 
-    # ✅ CORRECT axis structure
+
     fig.update_xaxes(
         gridcolor='#1a1f2e',
         showgrid=True,
@@ -729,7 +686,7 @@ def create_stable_volatile_comparison_side_by_side(
         row=2, col=1
     )
 
-    # ✅ Correct axis structure
+   
     fig.update_xaxes(
         gridcolor='#1a1f2e',
         showgrid=True,
@@ -767,10 +724,8 @@ def create_stable_volatile_comparison_side_by_side(
 
 
 
-# ============ MAIN APP ============
-
 def main():
-    # Header
+   
     col1, col2 = st.columns([3, 1])
     with col1:
         st.markdown("# Crypto Volatility Visualizer")
@@ -784,13 +739,13 @@ def main():
     
     st.markdown("---")
     
-    # Sidebar - Control Panel
+    
     with st.sidebar:
         st.markdown("## Controls")
         st.markdown("##### Customize data view")
         st.markdown("")
         
-        # DATA SOURCE: Real vs Simulated
+        
         st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**DATA SOURCE**</p>', unsafe_allow_html=True)
         data_source = st.radio(
             "Select data source",
@@ -801,17 +756,12 @@ def main():
         st.markdown("")
         
         if data_source == "Real Data":
-            # Warning about CSV file requirement
             st.warning("⚠️ Real Data mode requires the CSV file to be uploaded or present in the app directory.")
-            
-            # Fixed to 30 days for better performance
             st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**TIME RANGE**</p>', unsafe_allow_html=True)
             st.markdown('<p style="color: #ffffff; font-size: 12px;">Fixed to last 30 days for optimal performance</p>', unsafe_allow_html=True)
             days_range = 30  # Fixed to 30 days
             
             st.markdown("")
-            
-            # Data Granularity
             st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**DATA GRANULARITY**</p>', unsafe_allow_html=True)
             granularity = st.selectbox(
                 "Select data granularity",
@@ -821,7 +771,6 @@ def main():
             
             st.markdown("")
             
-            # File Upload (optional - use default dataset)
             st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**CUSTOM DATASET**</p>', unsafe_allow_html=True)
             use_default = st.checkbox("Use default dataset", value=True)
             
@@ -834,8 +783,7 @@ def main():
             else:
                 uploaded_file = None
         
-        else:  # Simulated Data
-            # Pattern selection
+        else:  
             st.markdown('<p style="color: #00d4ff; font-weight: 600; font-size: 14px;">**PRICE PATTERN**</p>', unsafe_allow_html=True)
             pattern = st.selectbox(
                 "Select price swing pattern",
@@ -932,7 +880,7 @@ def main():
             - Granularity: {granularity}
             """)
     
-    # Load Data based on source
+    
     if data_source == "Real Data":
         data_file = "Crypto_data.crdownload"
         
@@ -945,7 +893,7 @@ def main():
             st.warning("Please upload a dataset or use the default data.")
             st.stop()
         
-        # Load only the last 30 days of data for better performance
+       
         with st.spinner("Loading and processing last 30 days of data..."):
             df = load_crypto_data(data_file, days=30)
         
@@ -968,10 +916,10 @@ def main():
             """)
             st.stop()
         
-        # Show data loading success
+      
         st.success(f"✅ Loaded {len(df):,} records from the last 30 days")
         
-        # Apply granularity
+   
         if granularity == "Daily":
             df_display = aggregate_to_daily(df)
         elif granularity == "Hourly":
@@ -1017,8 +965,7 @@ def main():
                 help="Fixed time range for optimal performance"
             )
     
-    else:  # Simulated Data
-        # Generate simulated data
+    else:  
         with st.spinner("Generating simulated data..."):
             df = generate_simulated_data(
                 days=sim_days,
@@ -1029,10 +976,9 @@ def main():
                 volatility_level='mixed'
             )
         
-        # Show data generation success
-        st.success(f"✅ Generated {len(df):,} records using {pattern} pattern")
         
-        # Apply granularity
+        st.success(f"✅ Generated {len(df):,} records using {pattern} pattern")
+    
         if granularity == "Daily":
             df_display = aggregate_to_daily(df)
         elif granularity == "Hourly":
@@ -1043,10 +989,10 @@ def main():
                 'Close': 'last',
                 'Volume': 'sum'
             }).dropna().reset_index()
-        else:  # Raw data
+        else:  
             df_display = df.copy()
         
-        # Display data info
+      
         st.markdown("### Simulation Overview")
         col1, col2, col3, col4 = st.columns(4)
         
@@ -1080,12 +1026,10 @@ def main():
     
     st.markdown("")
     
-    # Calculate Metrics
     avg_price = df_display['Close'].mean()
     volatility = calculate_volatility(df_display)
     trend = calculate_trend(df_display)
     
-    # Metrics Row
     st.markdown("### Key Metrics")
     col1, col2, col3 = st.columns(3)
     
@@ -1113,7 +1057,6 @@ def main():
     
     st.markdown("")
     
-    # Section 1: Line Graph of Price Over Time
     st.markdown("### Price Movement Over Time")
     if data_source == "Real Data":
         st.markdown("##### Line graph showing how the price moves up and down")
@@ -1128,7 +1071,6 @@ def main():
     
     st.markdown("")
     
-    # Section 2: High vs Low Comparison
     st.markdown("### Daily High vs Low Comparison")
     st.markdown("##### Line graph showing both High and Low prices - helps see daily volatility")
     col1, col2 = st.columns(2)
@@ -1156,7 +1098,6 @@ def main():
     else:
         st.markdown("##### Marked areas showing stable (flat) vs volatile (sharp ups and downs) periods in simulation")
     
-    # Chart with shaded regions
     st.plotly_chart(
         create_stable_volatile_comparison_chart(df_display),
         use_container_width=True,
@@ -1164,8 +1105,7 @@ def main():
     )
     
     st.markdown("")
-    
-    # Side-by-side comparison
+
     st.markdown("### Stable vs Volatile Periods Comparison")
     if data_source == "Real Data":
         st.markdown("##### Side-by-side view of stable and volatile periods from real data")
@@ -1179,7 +1119,6 @@ def main():
     
     st.markdown("")
     
-    # NEW FA2 REQUIREMENT: Side-by-side comparison of Stable vs Volatile Money
     if data_source == "Simulated Data":
         st.markdown("### Stable Money vs Volatile Money Comparison")
         st.markdown("##### Compare stable money (small swings) with volatile money (big swings) side by side")
@@ -1197,8 +1136,7 @@ def main():
         )
         
         st.markdown("")
-    
-    # Data Preview Section
+
     st.markdown("### Data Preview")
     with st.expander("View recent data (last 10 records)", expanded=False):
         st.dataframe(
