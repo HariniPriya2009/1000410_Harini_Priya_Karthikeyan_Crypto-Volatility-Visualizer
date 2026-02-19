@@ -16,7 +16,7 @@ Columns: Timestamp (Unix), Open, High, Low, Close, Volume
 
  How to Use
 
-live link: https://1000410-harini-priya-karthikeyan-crypto-volatility-visualizer.streamlit.app/
+live link: https://1000410-harinipriya-karthikeyan-crypto-volatility-visualizer.streamlit.app/
  
  Dashboard Features
 
