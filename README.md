@@ -63,6 +63,7 @@ Expandable section for detailed view
 
 📁 File Structure
 HariniPriya2009/1000410_Harini_Priya_Karthikeyan_Crypto-Volatility-Visualizer
+
 ├── Crypto_data.crdownload          
 ├── App.py        
 ├── requirements.txt                          
@@ -85,17 +86,7 @@ Close: Closing price
 
 Volume: Trading volume
 
- What's Preserved
-
-Premium dark theme styling
-
-All visualization charts
-
-Interactive controls
-
-Responsive layout
-
-Custom CSS styling
 
 
-C
+
+
